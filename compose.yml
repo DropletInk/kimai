@@ -1,0 +1,42 @@
+services:
+
+  sqldb:
+    image: mysql:8.3
+    volumes:
+      - mysql:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=kimai
+      - MYSQL_USER=kimaiuser
+      - MYSQL_PASSWORD=1234
+      - MYSQL_ROOT_PASSWORD=1234
+    command: --default-storage-engine innodb
+    restart: unless-stopped
+    healthcheck:
+      test: mysqladmin -p$$MYSQL_ROOT_PASSWORD ping -h localhost
+      interval: 20s
+      start_period: 10s
+      timeout: 10s
+      retries: 3
+
+  kimai:
+    build:
+      context: .
+      args:
+        BASE: apache
+    volumes:
+      - data:/opt/kimai/var/data
+      - plugins:/opt/kimai/var/plugins
+    ports:
+      - 8001:8001
+    environment:
+      - ADMINMAIL=admin@gmail.com
+      - ADMINPASS=123456789
+      - APP_ENV=prod
+      - "DATABASE_URL=mysql://kimaiuser:1234@sqldb/kimai?charset=utf8mb4&serverVersion=8.3.0"
+    restart: unless-stopped
+    depends_on:
+      - sqldb
+volumes:
+  data:
+  mysql:
+  plugins:
